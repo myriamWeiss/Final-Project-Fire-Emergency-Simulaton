@@ -1,7 +1,7 @@
 # Fire Emergency Dispatch Simulation
 
 This project implements a **discrete-event simulation** for a fire emergency dispatch system.  
-It compares different vehicle dispatch policies (MeanRT, Percentile-95, and LBR – the suggested policy) in order to minimize **Response Time (RT)** and improve system performance.
+It compares different vehicle dispatch policies (MinRT, Percentile-95, and LBR – the suggested policy) in order to minimize **Response Time (RT)** and improve system performance.
 
 ## Overview
 
@@ -128,4 +128,5 @@ To see queue heat map, run the following command:
 ```bash
 python queue_map.py <output-dir>/result_project.xlsx
 ```
+
 
