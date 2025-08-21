@@ -1,4 +1,4 @@
-﻿# Fire Emergency Dispatch Simulation
+# Fire Emergency Dispatch Simulation
 
 This project implements a **discrete-event simulation** for a fire emergency dispatch system.  
 It compares different vehicle dispatch policies (MeanRT, Percentile-95, and LBR – the suggested policy) in order to minimize **Response Time (RT)** and improve system performance.
@@ -47,6 +47,13 @@ It evaluates how different dispatch policies affect key performance metrics such
 - `run_wilconxon.py`: Applies Wilcoxon significance tests on queues and RT  
 - `excel_file.py`: Merges multiple Excel outputs into one combined result file  
 - `heatMap.py`: Generates heatmaps for win percentages and queues  
+
+### Queue Statistics & Wilcoxon Analysis
+- Parses simulation output intervals and assigns them into predefined bins (`y_bins`, `x_bins`) for consistent grouping.  
+- Cleans and restructures the dataset to focus on average queue sizes of two compared policies.  
+- Applies the **Wilcoxon signed-rank test** on grouped queue data, computing significance levels (`p < 0.1`, `p < 0.2`, etc.).  
+- Produces a DataFrame of results and generates a **heatmap** of statistically significant queue differences using [`get_heatmap_for_queu`](heatMap.py).  
+
 
 ## Mathematical Models
 
