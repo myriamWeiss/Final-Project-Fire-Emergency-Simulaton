@@ -66,43 +66,43 @@ It evaluates how different dispatch policies affect key performance metrics such
 1. **Parameter generation**  
    - Random sets of interarrival, service, and response times are created for each *(area, vehicle)* pair.  
    - Distributions used: exponential (for interarrival), lognormal (for service and response), with variation controlled by coefficients of variation (CVs).  
-   - Implemented in [`analysis.generate_random_parameters`](analysis.py#L17-L61) and [`analysis.get_lognormal_params`](analysis.py#L63-L66).
+   - Implemented in [`analysis.generate_random_parameters`](analysis.py) and [`analysis.get_lognormal_params`](analysis.py).
 
 2. **Vehicle initialization**  
-   - A fleet of [`Vehicle`](models.py#L19-L62) objects is created, each with its own arrival, service, and response profiles.  
-   - Constructed in [`project.generate_vehicles`](project.py#L61-L75).
+   - A fleet of [`Vehicle`](models.py) objects is created, each with its own arrival, service, and response profiles.  
+   - Constructed in [`project.generate_vehicles`](project.py).
 
 3. **Precomputation of random times**  
    - All random times are generated **in advance** to guarantee fair policy comparisons.  
-   - Stored in [`PrecomputedTimes`](models.py#L136-L143).  
-   - Implemented by [`analysis.generate_random_times`](analysis.py#L67-L114).
+   - Stored in [`PrecomputedTimes`](models.py).  
+   - Implemented by [`analysis.generate_random_times`](analysis.py).
 
 4. **Simulation setup**  
-   - A [`Simulation`](simulation.py#L15-L41) instance is created with the chosen policy and precomputed times.  
+   - A [`Simulation`](simulation.py) instance is created with the chosen policy and precomputed times.  
    - Event lists are seeded with initial **arrival events** at `t=0`.  
    - State tracking variables include available vehicles, queues, service counts, and response logs.
 
 5. **Discrete-event loop**  
-   - Core loop is in [`Simulation.run`](simulation.py#L233-L265).  
+   - Core loop is in [`Simulation.run`](simulation.py).  
    - It repeatedly processes the earliest event from the priority queue:  
-     - **Arrival event** → [`Simulation._handle_arrival_event`](simulation.py#L155-L194)  
-     - **Completion event** → [`Simulation._handle_completion_event`](simulation.py#L211-L217)  
-     - Queue handling → [`Simulation._process_queue`](simulation.py#L117-L153).
+     - **Arrival event** → [`Simulation._handle_arrival_event`](simulation.py)  
+     - **Completion event** → [`Simulation._handle_completion_event`](simulation.py)  
+     - Queue handling → [`Simulation._process_queue`](simulation.py).
 
 6. **Policy decision-making**  
    - Dispatch decisions are delegated to the selected policy class:  
-     - [`MeanRT`](policies.py#L35-L53) → lowest average RT  
-     - [`Percentil_95`](policies.py#L73-L111) → lowest 95th percentile RT  
-     - [`LBR`](policies.py#L112-L176) → Laplace-based score combining call arrivals, service, and response risks.  
-   - Policies all inherit from [`DispatchPolicy`](policies.py#L13-L28).
+     - [`MeanRT`](policies.py) → lowest average RT  
+     - [`Percentil_95`](policies.py) → lowest 95th percentile RT  
+     - [`LBR`](policies.py) → Laplace-based score combining call arrivals, service, and response risks.  
+   - Policies all inherit from [`DispatchPolicy`](policies.py).
 
 7. **Replication and comparison**  
-   - Each parameter set is simulated multiple times in [`project.run_replications`](project.py#L91-L129).  
-   - Policy outcomes are compared in [`project.summarize_replication_results`](project.py#L130-L186).  
+   - Each parameter set is simulated multiple times in [`project.run_replications`](project.py).  
+   - Policy outcomes are compared in [`project.summarize_replication_results`](project.py).  
    - Pairwise metrics include win percentage, confidence intervals (CI), and Wilcoxon tests.
 
 8. **Result aggregation and visualization**  
-   - Results across parameter sweeps are produced in [`results_project.get_final_results`](results_project.py#L13-L40).  
+   - Results across parameter sweeps are produced in [`results_project.get_final_results`](results_project.py).  
    - Summaries and win scores are computed in [`wining_scores.py`](wining_scores.py).  
    - Heatmaps of RT and queue statistics are generated in [`heatMap.py`](heatMap.py).
 
@@ -128,3 +128,4 @@ To see queue heat map, run the following command:
 ```bash
 python queue_map.py <output-dir>/result_project.xlsx
 ```
+
