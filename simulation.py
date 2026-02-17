@@ -109,6 +109,7 @@ class Simulation:
                 # For Response Time Policy: compute 90th percentile response times
                 responses = self.precomputed_times.responses[(area_id, vehicle_id)]
                 self.mean_response_times[area_id][vehicle_id] = np.mean(responses)
+                logger.info(f"calculated response times for area: {area_id}, vehicle: {vehicle_id}")
         
         self.dispatch_policy.compute_parameters(self.precomputed_times, self.vehicles, NUM_AREA, self.mean_response_times)
 

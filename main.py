@@ -12,6 +12,8 @@ def main():
    results_file_name = get_final_results()
    results_file_path = os.path.join(globs.folder_path, results_file_name)
 
+   print(f"created results file path: {results_file_path}")
+
    # ------------ Choose HeatMAp parmater -------------
    #1. choose the pairs of policies
    
