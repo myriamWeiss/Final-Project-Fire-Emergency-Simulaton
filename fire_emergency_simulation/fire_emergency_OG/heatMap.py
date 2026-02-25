@@ -136,7 +136,7 @@ def build_heatmap_from_csv_win(df, norm, score_string, cmap_name, title, title_c
 
     set_plot_labels(ax, title)
     add_colorbar(fig, ax, cmap, norm, title_color_bar)
-    save_and_show_figure(fig)
+    save_and_show_figure(fig, title)
     return ax
 
 def create_figure_and_axes(figsize=(10, 8)):
@@ -174,7 +174,7 @@ def annotate_rectangle(ax, x, y, width, height, score):
     ax.text(x + width / 2, y + height / 2, f"{int(score)}", ha="center", va="center", color="black", fontsize=5)
 
 
-def set_plot_labels(ax, title, xlim=(10, 500), ylim=(500, 10000), xlabel="Time Service Range (min)", ylabel="Inter-arrival Times Range (min)"):
+def set_plot_labels(ax, title, xlim=(10, 500), ylim=(500, 10100), xlabel="Time Service Range (min)", ylabel="Inter-arrival Times Range (min)"):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_title(title)
@@ -186,8 +186,8 @@ def add_colorbar(fig, ax, cmap, norm, label):
     sm.set_array([])
     fig.colorbar(sm, ax=ax, label=label)
 
-def save_and_show_figure(fig):
-    output_image_path="heatmap.png"
+def save_and_show_figure(fig, title):
+    output_image_path= title + ".png"
     plt.tight_layout()
     plt.savefig(output_image_path)
     plt.show()
