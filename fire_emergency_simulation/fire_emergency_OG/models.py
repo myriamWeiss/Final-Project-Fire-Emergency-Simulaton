@@ -150,7 +150,7 @@ class PrecomputedTimes:
     services: Dict[Tuple[int, int], List[float]]
     responses: Dict[Tuple[int, int], List[float]]
 
-@dataclass
+
 class ArrivalMode(Enum):
     REGULAR = "Regular"
     EMPIRICAL = "Empirical"

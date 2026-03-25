@@ -1,17 +1,20 @@
-from heatMap import  get_heatMap
-from results_project import get_final_results
-from empirical_project import empirical_project
 import os
 import datetime
 from globals import globs
 import pandas as pd
+# Project file :
 from excel_file import combine_csv_files
+from experiment import RegularMode, EmpiricalMode
+from results_project import get_final_results
+from project import start_project
+from heatMap import  get_heatMap
 
 def main():
    # Chose with the '#' :
-   #run_simulation_and_heat_map() #run the simulaton
+   run_simulation_and_heat_map() #run the simulaton
+   #run_empirical_project()
    #run_heat_map() #run the heatmap
-   run_empirical_project()
+   
  
    
 def run_heat_map():
@@ -24,14 +27,16 @@ def run_heat_map():
    return 
 
 def run_simulation_and_heat_map():
+   mode = RegularMode()
    make_new_folder()
-   results_file_name = get_final_results() #in the folder created in the run
+   results_file_name = get_final_results(mode) #in the folder created in the run
    results_file_path = os.path.join(globs.folder_path, results_file_name)
    ax =get_heatMap(results_file_path)
 
 def run_empirical_project():
+   mode = EmpiricalMode()
    make_new_folder()
-   empirical_project()
+   start_project(mode)
    # results_file_name = get_final_results() #in the folder created in the run
    # results_file_path = os.path.join(globs.folder_path, results_file_name)
    #ax =get_heatMap(results_file_path)
@@ -46,4 +51,5 @@ def make_new_folder():
     
    
 if __name__ == "__main__":
-    main()
+   print('hey')
+   main()

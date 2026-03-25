@@ -7,7 +7,7 @@ from typing import List, Dict, Set, Optional, Tuple, Any
 import logging
 from models import Vehicle, Event, EventLog, PrecomputedTimes, EventType, ArrivalMode
 from policies import DispatchPolicy
-from config import NUM_AREA, NUM_SAMPLES
+from config import NUM_AREA, NUM_VEHICLE,  NUM_SAMPLES
 
 # Configure logging
 logging.basicConfig(
@@ -53,7 +53,7 @@ class Simulation:
 
 
         # Track usage of precomputed times
-        self.time_indices = {(i, j): 0 for i in range(NUM_AREA) for j in range(NUM_AREA)}
+        self.time_indices = {(i, j): 0 for i in range(NUM_AREA) for j in range(NUM_VEHICLE)}
         self.max_index_used = 0
         self.start_time = time.time()
 
@@ -287,7 +287,7 @@ class Simulation:
         """
         run_start_time = time.time()
 
-        second_loop = 1 if self.arrival_mode == ArrivalMode.EMPIRICAL else NUM_AREA #vehicle Id = 0
+        second_loop = 1 if self.arrival_mode == ArrivalMode.EMPIRICAL else NUM_VEHICLE #vehicle Id = 0
         
         # Initialize first arrivals
         for area_id in range(NUM_AREA):

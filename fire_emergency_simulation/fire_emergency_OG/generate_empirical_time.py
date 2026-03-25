@@ -121,7 +121,7 @@ def generate_empirical_samples_from_pmf(path_file):
 # Generate Vehicles
 # ---------------------------------------------------
 
-def generate_empirical_vehicles(precomputed):
+def generate_empirical_vehicles(precomputed: PrecomputedTimes):
     """
     Build Vehicle objects and compute a sensible total_rate per vehicle:
     total_rate = 1 / mean(service + response) aggregated across areas for this vehicle.
