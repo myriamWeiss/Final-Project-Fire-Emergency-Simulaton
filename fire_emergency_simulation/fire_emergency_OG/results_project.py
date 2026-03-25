@@ -3,19 +3,18 @@ import pandas as pd
 from scipy import stats
 import math
 import pandas as pd
-import glob
 from typing import Dict, Tuple, List, Any
 from sklearn import logger
+# Project file
 from config import (NUM_PARAMETER_SETS, MAX_INTERARRIVAL_RANGE , MAX_TOTAL_SERVICE_RANGE , STEP_INNTERVAL, STEP_TOTAL_SERVICE, SERVICE_RT_RATIO)
-from project import runProject 
+from project import start_project 
 from wining_scores import count_binary_score_for_set, save_summarize_results
-import csv
-import os
 from globals import globs
+from experiment import RegularMode, EmpiricalMode
 
 
 
-def get_final_results() -> str:
+def get_final_results(mode) -> str:
     for interval_range in generate_interval_ranges():
         globs.interval_index = interval_range
 
@@ -24,7 +23,7 @@ def get_final_results() -> str:
             logger.info(f"Interval: {interval_range}, Service: {total_service_range}")
 
             #dict - polici1 vs ourpolicy2 : df of all the 5 set
-            result_param = run_simulation_for_cell(interval_range, total_service_range)
+            result_param = run_simulation_for_cell(interval_range, total_service_range, mode)
 
             for comparison_name, df_p1_vs_p2 in result_param.items():
                 print("Col name : ", df_p1_vs_p2.columns )
@@ -43,12 +42,13 @@ def generate_service_ranges():
         low = MAX_TOTAL_SERVICE_RANGE[0] + x * STEP_TOTAL_SERVICE
         yield (low, low + STEP_TOTAL_SERVICE)
 
-def run_simulation_for_cell(interval_range, total_service_range):
+def run_simulation_for_cell(interval_range, total_service_range, mode):
     globs.set_index = 0
     service_range = tuple(s * SERVICE_RT_RATIO for s in total_service_range)
     response_range = tuple(s * (1 - SERVICE_RT_RATIO) for s in total_service_range)
     
-    return runProject(interval_range, service_range, response_range)
+    #return runProject(interval_range, service_range, response_range)
+    return start_project(interval_range, service_range, response_range, mode)
 
 def summarize_cell_results(result_df):
     

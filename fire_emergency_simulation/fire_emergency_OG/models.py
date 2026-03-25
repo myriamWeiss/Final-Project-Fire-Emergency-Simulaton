@@ -46,6 +46,7 @@ class Vehicle:
     response_rates: Dict[int, float]
     service_cvs: Dict[int, float]
     response_cvs: Dict[int, float]
+    total_rate: int = 0
 
     def generate_service_time(self, area_id: int) -> Tuple[float, float]:
         """
@@ -66,6 +67,15 @@ class Vehicle:
         delay = np.random.lognormal(mu_d, sigma_d)
         service_time = response_time + delay
         return service_time, response_time
+
+
+    def generate_empirical_service_time(self, area_id: int) -> Tuple[float, float]:
+        service_time = 0
+        response_time = 0
+        return service_time, response_time
+    
+    def calculate_total_rate(self, arrival_time ):
+        pass
 
     @property
     def total_arrival_rate(self) -> float:
@@ -139,3 +149,12 @@ class PrecomputedTimes:
     arrivals: Dict[Tuple[int, int], List[float]]
     services: Dict[Tuple[int, int], List[float]]
     responses: Dict[Tuple[int, int], List[float]]
+
+
+class ArrivalMode(Enum):
+    REGULAR = "Regular"
+    EMPIRICAL = "Empirical"
+
+@dataclass
+class Experiment:
+    arrival_mode :  ArrivalMode

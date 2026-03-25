@@ -2,13 +2,18 @@ from itertools import combinations
 import logging
 import pandas as pd
 import numpy as np
-from analysis import run_simulation_with_policies, generate_random_parameters, generate_random_times
+from typing import List, Tuple, Dict, Any
+import os
+# Project file
+from config import NUM_AREA, NUM_VEHICLE, NUM_PARAMETER_SETS, NUM_REPLICATIONS, SIMULATION_TIME, NUM_SAMPLES
 from policies import MeanRT, LBR, Percentil_95
-from models import Vehicle
-from config import NUM_AREA, NUM_PARAMETER_SETS, NUM_REPLICATIONS, SIMULATION_TIME, NUM_SAMPLES
+from models import Vehicle, PrecomputedTimes, ArrivalMode
+from policies import DispatchPolicy
+from simulation import Simulation
 from globals import globs
-from wining_scores import  get_win_score_percentage, get_statistique_score, save_summarize_results
-
+from wining_scores import  get_win_score_percentage, get_statistique_score
+from analysis import save_summarize_results
+from experiment import BaseExperimentMode
 
 
 # Configure logging
@@ -16,76 +21,61 @@ logging.basicConfig(
 level=logging.INFO,
 format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger("runProject")
+logger = logging.getLogger("project")
 
 
-
-def runProject(interval_range, service_range, response_range):
+def start_project(interval_range, service_range, response_range, mode:BaseExperimentMode):
     logger.info("Starting full policy comparison simulation...")
-    results_parm = []
-    for param_set in range(NUM_PARAMETER_SETS):
-        globs.set_index += 1
-        params = generate_random_parameters(interval_range, service_range, response_range) #no need O.G 
-        result = evaluate_parameter_set(param_set, params)
-        results_parm.append(result)
-    
+
+    # Get result of the Set
+    sets_results = get_results_of_sets(interval_range, service_range, response_range, mode)
 
     final = {}
-    for result_param in results_parm:
-        for comparison_name, set_result in result_param.items():
+    for result in sets_results:
+        for comparison_name, set_result in result.items():
             final.setdefault(comparison_name, [])
             final[comparison_name].append(set_result)
 
     final_dfs = {comparison_name: pd.DataFrame(list_set) for comparison_name, list_set in final.items()}
     return final_dfs 
 
+def get_results_of_sets(interval_range, service_range, response_range, mode:BaseExperimentMode) -> list:
+    sets_results = []
+    for index_set in range(NUM_PARAMETER_SETS):
+        globs.set_index += 1
 
-def evaluate_parameter_set(param_set, params):
-    mean_interarrival_times, mean_service_times, mean_response_times, utils, service_cvs, response_cvs = params
+        if mode.arrival_mode == ArrivalMode.REGULAR:
+            # Initiliaze parameter
+            time_parameter_set = mode.generate_time_parameters(interval_range, service_range, response_range) 
+            # Create Vehicle + generate Servie & Response time
+            vehicles = mode.generate_vehicles(time_parameter_set)
+              
+        else:
+            vehicles = None
+            time_parameter_set = None
 
-    vehicles = generate_vehicles(mean_interarrival_times, mean_service_times, mean_response_times, service_cvs, response_cvs)
-    pre_results = init_param_results(param_set, mean_interarrival_times, mean_service_times, mean_response_times, utils)
-
-    stats = run_replications(vehicles, mean_interarrival_times, mean_service_times, mean_response_times, service_cvs, response_cvs)
-
-    pre_results.update(stats)
-    return stats
-
-
-def generate_vehicles(mean_interarrival_times, mean_service_times, mean_response_times, service_cvs, response_cvs):
-    vehicles = [
-        Vehicle(j,
-                {i: 1 / mean_interarrival_times[i][j] for i in range(NUM_AREA)},
-                {i: 1 / mean_service_times[i][j] for i in range(NUM_AREA)},
-                {i: 1 / mean_response_times[i][j] for i in range(NUM_AREA)},
-                {i: service_cvs[i][j] for i in range(NUM_AREA)},
-                {i: response_cvs[i][j] for i in range(NUM_AREA)})
-        for j in range(NUM_AREA)
-    ]
-    return vehicles
+        # Run Replications
+        replications_result = run_replications(vehicles, time_parameter_set, mode)
+        
+        sets_results.append(replications_result)
+    return sets_results
 
 
-def init_param_results(param_set, mean_interarrival, mean_service, mean_response, utils):
-    result = {'param_set': param_set + 1, 'utilizations': utils}
-    for i in range(NUM_AREA):
-        for j in range(NUM_AREA):
-            result[f'interarrival_{i}_{j}'] = mean_interarrival[i][j]
-            result[f'service_{i}_{j}'] = mean_service[i][j]
-            result[f'response_{i}_{j}'] = mean_response[i][j]
-    return result
-
-
-def run_replications(vehicles, mean_interarrival, mean_service, mean_response, service_cvs, response_cvs):
+def run_replications(vehicles: list, time_parameter_set, mode:BaseExperimentMode):
     globs.replication_index = 0
-    our_policy = LBR()
-    other_policies = [Percentil_95(), MeanRT()]
+
+    # Policy
+    our_policy = mode.our_policy
+    other_policies = mode.other_policies
     all_policies = other_policies + [our_policy]
     policy_rep_results = {type(p).__name__: [] for p in all_policies}
 
     for rep in range(NUM_REPLICATIONS):
         globs.replication_index += 1
-        precomputed = generate_random_times(mean_interarrival, mean_service, mean_response, service_cvs, response_cvs, NUM_SAMPLES)
-        results = run_simulation_with_policies(vehicles, precomputed, SIMULATION_TIME, all_policies)
+        precomputed = mode.generate_precomputed_times(time_parameter_set)
+        if  mode.arrival_mode == ArrivalMode.EMPIRICAL:
+            vehicles = mode.generate_vehicles(precomputed)
+        results = run_simulation_with_policies(vehicles, precomputed, all_policies, mode)
         for policy, result in zip(all_policies, results):
             policy_rep_results[type(policy).__name__].append(result) #dict 2 key : name_polici and result_polici
     
@@ -99,6 +89,48 @@ def run_replications(vehicles, mean_interarrival, mean_service, mean_response, s
         summarized_results[name] = summarize_replication_results(p1_results, p2_results, name)
 
     return summarized_results
+
+
+def run_simulation_with_policies(vehicles: List[Vehicle], precomputed_times: PrecomputedTimes, policies: List[DispatchPolicy], mode:BaseExperimentMode ) -> List[Dict[str, Any]]:
+    """
+    Run simulations with multiple policies using the same random numbers.  
+    Returns:
+        List of dictionaries containing results for each policy
+    """
+    simulation_time = SIMULATION_TIME
+    results = []
+    arrival_mode = mode.arrival_mode
+
+    for policy in policies:
+        policy_name = type(policy).__name__
+        logger.info(f"Policy : {policy_name} || Y: {globs.interval_index}, X: {globs.total_services_index}")
+        logger.info(f"SET {globs.set_index} || REP {globs.replication_index}")
+
+        sim = Simulation(vehicles, policy, precomputed_times, arrival_mode=arrival_mode)
+        sim.run(simulation_time)
+        
+        # Extract key metrics
+        if sim.response_times:
+            percentile_90 = np.percentile(sim.response_times, 90)
+            mean_RT = np.mean(sim.response_times)
+        else:
+            percentile_90 = np.inf
+            mean_RT = np.inf
+
+        system_load = sim.total_service_time / (len(vehicles) * simulation_time)
+        
+        results.append({
+            'policy': policy_name,
+            'percentile_90': percentile_90,
+            'mean_RT' : mean_RT,
+            'avg_queue': sim.avg_queue, 
+            'max_queue': sim.max_queue_size,
+            'total_queue_size' : sim.delayed_event,
+            'system_load': system_load,
+            'total_services': sim.total_services
+        })
+        
+    return results
 
 def summarize_replication_results(p1_results, p2_results, name_p1_vs_p2):
     policy1_percentiles, policy2_percentiles = [], []
@@ -157,11 +189,23 @@ def summarize_replication_results(p1_results, p2_results, name_p1_vs_p2):
     save_summarize_results(summarize_results, name_p1_vs_p2, 'parameter_result_for_set.xlsx')
     return summarize_results
 
+# ---------------------------------------------------
+# From Emperical file
+# ---------------------------------------------------
 
+def check_if_exist_file_result(name_file):
+    try:
+        if os.path.exists(name_file):
+            os.remove(name_file)
+            logger.info(f"Deleted previous results file: {name_file}")
+    except Exception as e:
+        logger.warning(f"Could not delete {name_file} (is it open?): {e}")
 
-def save_results(results_df, path):
-    results_df.to_excel(path, index=False)
-    logger.info(f"Results saved to: {path}")
-
-
-  
+# def from_Ofek():
+#     RESULTS_XLSX = "replication_results.xlsx"
+#     check_if_exist_file_result(RESULTS_XLSX )
+#     generate_policy_comparison_plots(
+#         xlsx_path=RESULTS_XLSX,
+#         sheet="results",
+#         output_dir="plots"
+#     )

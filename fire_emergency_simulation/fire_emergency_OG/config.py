@@ -2,6 +2,7 @@
 NUM_PARAMETER_SETS = 5
 NUM_REPLICATIONS = 30
 NUM_AREA = 5
+NUM_VEHICLE = 5
 
 SIMULATION_TIME = 1000000
 NUM_SAMPLES = 50000
@@ -12,7 +13,7 @@ EPSILON = 0.001
 
 # Parameter ranges  for entire HeatMap
 MAX_INTERARRIVAL_RANGE = (500,10000) #the Y need to be constant
-MAX_TOTAL_SERVICE_RANGE = (10,500)#the X (10,500) full
+MAX_TOTAL_SERVICE_RANGE = (240,300)#the X (10,500) full
 STEP_INNTERVAL = 200
 STEP_TOTAL_SERVICE = 10
 SERVICE_RT_RATIO = 0.75
@@ -22,6 +23,7 @@ UTILIZATION_THRESHOLD = 0.7
 CV_SERVICE_RANGE = (0.1, 0.5)
 CV_RESPONSE_RANGE = (0.2, 0.6)
 
+EMPERICAL_FILE = 'fire_emergency_OG/empirical_pmf.csv'
 
 # Functions to calculate derived parameters
 def calculate_required_samples():

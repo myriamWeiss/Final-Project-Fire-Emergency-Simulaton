@@ -2,9 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Set, Dict, Optional, List, Tuple
 import random
 from scipy import stats
-
 import numpy as np
-
 from models import Vehicle, Event, EventLog, PrecomputedTimes, EventType
 
 

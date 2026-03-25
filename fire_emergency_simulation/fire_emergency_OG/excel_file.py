@@ -108,8 +108,11 @@ def merge_simulation_outputs(root_folder: str, output_folder: str, sheet_names: 
 
     print("\n🎉 all files have been combined")
 
-merge_simulation_outputs(
-    root_folder='./Final Code 30.10/all folder',
-    output_folder='./folder_outputs',
-    sheet_names=['Percentil_95 vs MeanRT', 'Percentil_95 vs LBR', 'MeanRT vs LBR']
-)
+
+
+if __name__ == "__main__":
+    root_folder_name = '.\All Result - Copy'
+    output_folder_name = '.\combined result'
+    sheet_names = ['Percentil_95 vs MeanRT', 'Percentil_95 vs LBR', 'MeanRT vs LBR']
+
+    merge_simulation_outputs(root_folder_name, output_folder_name, sheet_names)

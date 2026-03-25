@@ -3,7 +3,7 @@ import pandas as pd
 from scipy import stats
 import logging
 from typing import Dict, Tuple, List, Any
-from project import runProject 
+#from project import runProject 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import Normalize
@@ -83,13 +83,16 @@ def get_heatMap(results_file_path):
     column_name_Rt = column_RT[user_response["Significance level"]]
     column_name_Qu = column_Queue[user_response["Significance level"]]
 
+    RT_title = 'Win Rate on 90th-Percentile Response Time'
+    Queue_title = 'Win Rate on Average Queue Size'
+
     if user_response["Heat Map Type"] == len(heatmap_type)-1: #if chosen both
-        make_heatmap(data, column_name_Rt, cmap_name="autumn", title = "Win Percentage Heatmap", title_color_bar ="Win Percentage")
-        make_heatmap(data, column_name_Qu, cmap_name="YlGn", title = "Queue size Heatmap", title_color_bar ="Queue size")
+        make_heatmap(data, column_name_Rt, cmap_name="autumn", title = RT_title, title_color_bar ="Win Percentage")
+        make_heatmap(data, column_name_Qu, cmap_name="YlGn_r", title = Queue_title, title_color_bar ="Win Percentage")
     elif user_response["Heat Map Type"] == 0: #if chosen RT
-        make_heatmap(data, column_name_Rt, cmap_name="autumn", title = "Win Percentage Heatmap", title_color_bar ="Win Percentage")
+        make_heatmap(data, column_name_Rt, cmap_name="autumn", title = RT_title, title_color_bar ="Win Percentage")
     else :#if chosen Qu
-        make_heatmap(data, column_name_Qu, cmap_name="YlGn", title = "Queue size Heatmap", title_color_bar ="Queue size")
+        make_heatmap(data, column_name_Qu, cmap_name="YlGn_r", title = Queue_title, title_color_bar ="Win Percentage")
 
 
 
@@ -132,11 +135,11 @@ def build_heatmap_from_csv_win(df, norm, score_string, cmap_name, title, title_c
         score = row[score_string]
 
         draw_colored_rectangle(ax, x, y, width, height, score, cmap, norm)
-        annotate_rectangle(ax, x, y, width, height, score)
+        #annotate_rectangle(ax, x, y, width, height, score) no need to write the score
 
     set_plot_labels(ax, title)
     add_colorbar(fig, ax, cmap, norm, title_color_bar)
-    save_and_show_figure(fig)
+    save_and_show_figure(fig, title)
     return ax
 
 def create_figure_and_axes(figsize=(10, 8)):
@@ -174,20 +177,23 @@ def annotate_rectangle(ax, x, y, width, height, score):
     ax.text(x + width / 2, y + height / 2, f"{int(score)}", ha="center", va="center", color="black", fontsize=5)
 
 
-def set_plot_labels(ax, title, xlim=(10, 500), ylim=(500, 10000), xlabel="Time Service Range (min)", ylabel="Inter-arrival Times Range (min)"):
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
+def set_plot_labels(ax, title, xlim=(10, 500), ylim=(500, 10100), xlabel="Time Service Range (min)", ylabel="Inter-arrival Times Range (min)"):
+    ax.set_xlabel(xlabel, fontsize=14)
+    ax.set_ylabel(ylabel, fontsize=14)
+    ax.set_title(title, fontsize=16)
+    #ax.tick_params(axis='both', labelsize=12)
     ax.set_xlim(*xlim)
     ax.set_ylim(*ylim)
 
 def add_colorbar(fig, ax, cmap, norm, label):
     sm = cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    fig.colorbar(sm, ax=ax, label=label)
+    #fig.colorbar(sm, ax=ax, label=label)
+    cbar = fig.colorbar(sm, ax=ax)
+    cbar.set_label(label, fontsize=14)
 
-def save_and_show_figure(fig):
-    output_image_path="heatmap.png"
+def save_and_show_figure(fig, title):
+    output_image_path= title + ".png"
     plt.tight_layout()
     plt.savefig(output_image_path)
     plt.show()

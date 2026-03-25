@@ -5,9 +5,9 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict, Set, Optional, Tuple, Any
 import logging
-from models import Vehicle, Event, EventLog, PrecomputedTimes, EventType
+from models import Vehicle, Event, EventLog, PrecomputedTimes, EventType, ArrivalMode
 from policies import DispatchPolicy
-from config import NUM_AREA, NUM_SAMPLES
+from config import NUM_AREA, NUM_VEHICLE,  NUM_SAMPLES
 
 # Configure logging
 logging.basicConfig(
@@ -26,20 +26,21 @@ class Simulation:
     """
     
     def __init__(self, vehicles: List[Vehicle], dispatch_policy: DispatchPolicy,
-                 precomputed_times: PrecomputedTimes):
+                 precomputed_times: PrecomputedTimes, arrival_mode: ArrivalMode = ArrivalMode.REGULAR):
         """
         Initialize simulation with entities and configuration.
-        
         Args:
             vehicles: List of Vehicle objects representing available units
             dispatch_policy: Policy to use for vehicle selection
             precomputed_times: Pre-generated random times for reproducibility
+            arrival_mode : Parameter is generate from Empirical Distribution or from known Distribution
         """
         self.total_service_time = 0
         self.vehicles = vehicles
         self.dispatch_policy = dispatch_policy
         self.precomputed_times = precomputed_times
         self.available_vehicles = set(range(len(vehicles)))
+        self.arrival_mode = arrival_mode
         self.events = []
         self.current_time = 0
         self.response_times = []
@@ -52,7 +53,7 @@ class Simulation:
 
 
         # Track usage of precomputed times
-        self.time_indices = {(i, j): 0 for i in range(NUM_AREA) for j in range(NUM_AREA)}
+        self.time_indices = {(i, j): 0 for i in range(NUM_AREA) for j in range(NUM_VEHICLE)}
         self.max_index_used = 0
         self.start_time = time.time()
 
@@ -139,38 +140,41 @@ class Simulation:
     def _get_next_time(self, area_id: int, vehicle_id: int, time_type: str) -> float:
         """
         Get next precomputed time of specified type.
-        
         Args:
             area_id: ID of the area
             vehicle_id: ID of the vehicle
             time_type: Type of time ('arrival', 'service', or 'response')
-            
         Returns:
-            Next random time value
-            
+            Next random time value  
         Raises:
             ValueError: If time_type is not recognized
         """
-        key = (area_id, vehicle_id)
-        idx = self.time_indices[key]
-
-        # Track maximum index used
-        self.max_index_used = max(self.max_index_used, idx)
-
-        # Check if we're close to running out of samples
-        if idx >= len(self.precomputed_times.arrivals[key]) - 100:
-            warnings.warn(f"Running low on precomputed times for area {area_id}, vehicle {vehicle_id}")
-
-        self.time_indices[key] += 1
 
         if time_type == 'arrival':
-            return self.precomputed_times.arrivals[key][idx]
+            key = self._get_arrival_key(area_id, vehicle_id)
+            container = self.precomputed_times.arrivals
         elif time_type == 'service':
-            return self.precomputed_times.services[key][idx]
+            key = (area_id, vehicle_id)
+            container = self.precomputed_times.services
         elif time_type == 'response':
-            return self.precomputed_times.responses[key][idx]
+            key = (area_id, vehicle_id)
+            container = self.precomputed_times.responses
         else:
             raise ValueError(f"Unknown time type: {time_type}")
+
+        #Keeping track which precomputed time value should be used next from a specific (area, vehicle) time sequence.
+        idx = self.time_indices[key]
+        # Track maximum index used
+        self.max_index_used = max(self.max_index_used, idx)
+        # Check if we're close to running out of samples
+        if idx >= len(container[key]) - 100:
+            warnings.warn(f"Running low on {time_type} times for key {key}")
+        self.time_indices[key] += 1
+        
+        return container[key][idx]
+
+    def _get_arrival_key(self, area_id: int, vehicle_id: int) -> tuple[int, int]:
+        return (area_id,0) if self.arrival_mode == ArrivalMode.EMPIRICAL else (area_id, vehicle_id)
 
     def _process_queue(self) -> None:
         """
@@ -278,15 +282,16 @@ class Simulation:
     def run(self, end_time: float) -> None:
         """
         Run the simulation until the specified end time.
-        
         Args:
             end_time: Time at which to stop the simulation
         """
         run_start_time = time.time()
 
+        second_loop = 1 if self.arrival_mode == ArrivalMode.EMPIRICAL else NUM_VEHICLE #vehicle Id = 0
+        
         # Initialize first arrivals
         for area_id in range(NUM_AREA):
-            for vehicle_id in range(NUM_AREA):
+            for vehicle_id in range(second_loop):
                 arrival_time = self._get_next_time(area_id, vehicle_id, 'arrival')
                 heapq.heappush(
                     self.events,
