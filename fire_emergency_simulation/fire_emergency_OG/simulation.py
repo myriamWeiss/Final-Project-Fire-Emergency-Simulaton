@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict, Set, Optional, Tuple, Any
 import logging
+from collections import deque
 from models import Vehicle, Event, EventLog, PrecomputedTimes, EventType, ArrivalMode
 from policies import DispatchPolicy
 from config import NUM_AREA, NUM_VEHICLE,  NUM_SAMPLES
@@ -44,7 +45,8 @@ class Simulation:
         self.events = []
         self.current_time = 0
         self.response_times = []
-        self.waiting_queue = []
+        #self.waiting_queue = []
+        self.waiting_queue = deque()
         self.max_queue_size = 0
         self.total_services = 0
         self.delayed_event = 0
@@ -183,11 +185,14 @@ class Simulation:
         available_vehicles_log = list(self.available_vehicles)
         while self.waiting_queue and self.available_vehicles:
             self._accumulate_queue_area(self.current_time)#new
-            arrival_time, area_id = self.waiting_queue.pop(0)
+            #arrival_time, area_id = self.waiting_queue.pop(0) origine
+            arrival_time, area_id = self.waiting_queue.popleft() #deque
+
             chosen_vehicle_id = self._select_vehicle(area_id)
 
             if chosen_vehicle_id is None:
-                self.waiting_queue.insert(0, (arrival_time, area_id))
+                #self.waiting_queue.insert(0, (arrival_time, area_id))origine
+                self.waiting_queue.appendleft((arrival_time, area_id)) #deque
                 break
 
             self.available_vehicles.remove(chosen_vehicle_id)
@@ -196,13 +201,13 @@ class Simulation:
             response_time = self._get_next_time(area_id, chosen_vehicle_id, 'response')
 
             # Log the event
-            self.log_event(
-                Event(self.current_time, EventType.QUEUE_PROCESSING, area_id),
-                available_vehicles_log, 
-                chosen_vehicle_id, 
-                service_time, 
-                response_time
-            )
+            # self.log_event(
+            #     Event(self.current_time, EventType.QUEUE_PROCESSING, area_id),
+            #     available_vehicles_log, 
+            #     chosen_vehicle_id, 
+            #     service_time, 
+            #     response_time
+            # )
 
             total_response_time = (self.current_time - arrival_time) + response_time
             self.response_times.append(total_response_time)
@@ -236,7 +241,7 @@ class Simulation:
         chosen_vehicle_id = None
         
         if self.available_vehicles:
-            available_vehicles_for_log = list(self.available_vehicles)
+            #available_vehicles_for_log = list(self.available_vehicles)
             chosen_vehicle_id = self._select_vehicle(event.area_id)
             
             if chosen_vehicle_id is not None:
@@ -254,20 +259,20 @@ class Simulation:
                           event.area_id, chosen_vehicle_id)
                 )
         else:
-            available_vehicles_for_log = []
+            #available_vehicles_for_log = []
             self._accumulate_queue_area(self.current_time)#new
             self.waiting_queue.append((event.arrival_time, event.area_id))
             self.max_queue_size = max(self.max_queue_size, len(self.waiting_queue))
             self.delayed_event += 1
         
-        # Log the event
-        self.log_event(
-            event, 
-            available_vehicles_for_log, 
-            chosen_vehicle_id, 
-            service_time, 
-            response_time
-        )
+        # # Log the event
+        # self.log_event(
+        #     event, 
+        #    available_vehicles_for_log, 
+        #     chosen_vehicle_id, 
+        #     service_time, 
+        #     response_time
+        # )
 
     def _handle_completion_event(self, event: Event) -> None:
         """

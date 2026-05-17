@@ -128,12 +128,20 @@ class LBR(DispatchPolicy):
                 services = services[:min_length]
                 responses = responses[:min_length]
 
-                # Calculate total service times (service + response)
-                total_times = [services[i] + responses[i] for i in range(min_length)]
-
                 lambda_j = vehicle.total_arrival_rate
-                # Use total time instead of just service time
-                exp_term = np.mean([np.exp(-lambda_j * total_time) for total_time in total_times])
+
+                # Calculate total service times (service + response)
+                # Use total time instead of just service time:
+
+                #Origine logic
+                # total_times = [services[i] + responses[i] for i in range(min_length)]
+                # exp_term = np.mean([np.exp(-lambda_j * total_time) for total_time in total_times])
+
+                #Vectore logic
+                services = np.asarray(services[:min_length])
+                responses = np.asarray(responses[:min_length])
+                total_times = services + responses
+                exp_term = np.exp(-lambda_j * total_times).mean()
 
                 # Calculate 95th percentile from lognormal distribution
                 mean_response = mean_response_times[area_id][vehicle_id]

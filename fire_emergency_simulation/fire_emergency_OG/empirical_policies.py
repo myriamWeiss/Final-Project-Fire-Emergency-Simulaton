@@ -72,9 +72,6 @@ class LBR_EMP(DispatchPolicy):
                 services = services[:min_length]
                 responses = responses[:min_length]
 
-                # Total service time (service + response)
-                total_times = [services[i] + responses[i] for i in range(min_length)]
-
                 # NEW: λ from the single per-area interarrival stream (area_id, 0)
                 iarea = precomputed_times.arrivals.get((area_id, 0), [])
                 if iarea and sum(iarea) > 0:
@@ -83,8 +80,16 @@ class LBR_EMP(DispatchPolicy):
                 else:
                     lambda_j = 0.0001  # small epsilon to avoid div-by-zero / empty lists
 
-                # === same formula as before ===
-                exp_term = np.mean([np.exp(-lambda_j * total_time) for total_time in total_times])
+
+                #Origine logic
+                # total_times = [services[i] + responses[i] for i in range(min_length)]
+                # exp_term = np.mean([np.exp(-lambda_j * total_time) for total_time in total_times])
+
+                #Vectore logic
+                services = np.asarray(services[:min_length])
+                responses = np.asarray(responses[:min_length])
+                total_times = services + responses
+                exp_term = np.exp(-lambda_j * total_times).mean()
                 percentile_95 = np.percentile(responses, 95)
                 resp_term = 1 / percentile_95
 

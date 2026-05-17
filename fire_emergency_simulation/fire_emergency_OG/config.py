@@ -12,8 +12,8 @@ RANDOM_SEED = 42
 EPSILON = 0.001
 
 # Parameter ranges  for entire HeatMap
-MAX_INTERARRIVAL_RANGE = (500,10000) #the Y need to be constant
-MAX_TOTAL_SERVICE_RANGE = (240,300)#the X (10,500) full
+MAX_INTERARRIVAL_RANGE =  (500,700)#(500,10000) the Y need to be constant
+MAX_TOTAL_SERVICE_RANGE = (20,30)#the X (10,500) full
 STEP_INNTERVAL = 200
 STEP_TOTAL_SERVICE = 10
 SERVICE_RT_RATIO = 0.75

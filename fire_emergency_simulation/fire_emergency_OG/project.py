@@ -14,6 +14,7 @@ from globals import globs
 from wining_scores import  get_win_score_percentage, get_statistique_score
 from analysis import save_summarize_results
 from experiment import BaseExperimentMode
+from analyzeKoubia import analyze_result_simulation, fusion_policies_analyze #analyze
 
 
 # Configure logging
@@ -69,16 +70,22 @@ def run_replications(vehicles: list, time_parameter_set, mode:BaseExperimentMode
     other_policies = mode.other_policies
     all_policies = other_policies + [our_policy]
     policy_rep_results = {type(p).__name__: [] for p in all_policies}
+    rep_analyze_result = {type(p).__name__: [] for p in all_policies}
 
     for rep in range(NUM_REPLICATIONS):
         globs.replication_index += 1
         precomputed = mode.generate_precomputed_times(time_parameter_set)
         if  mode.arrival_mode == ArrivalMode.EMPIRICAL:
             vehicles = mode.generate_vehicles(precomputed)
-        results = run_simulation_with_policies(vehicles, precomputed, all_policies, mode)
+        results, analyze_result = run_simulation_with_policies(vehicles, precomputed, all_policies, mode)
         for policy, result in zip(all_policies, results):
             policy_rep_results[type(policy).__name__].append(result) #dict 2 key : name_polici and result_polici
-    
+            policy_name = type(policy).__name__
+            if analyze_result is not None: #analyze
+                rep_analyze_result[policy_name].append(analyze_result[policy_name])
+        
+    fusion_policies_analyze(rep_analyze_result, all_policies) #analyze
+
     summarized_results = {} #dict name_vs_policy and result all kind scores data
     for p1, p2 in combinations(all_policies, 2):
         p1_name = type(p1).__name__
@@ -100,6 +107,7 @@ def run_simulation_with_policies(vehicles: List[Vehicle], precomputed_times: Pre
     simulation_time = SIMULATION_TIME
     results = []
     arrival_mode = mode.arrival_mode
+    analyze_result = {}
 
     for policy in policies:
         policy_name = type(policy).__name__
@@ -110,7 +118,8 @@ def run_simulation_with_policies(vehicles: List[Vehicle], precomputed_times: Pre
         sim.run(simulation_time)
         
         # Extract key metrics
-        if sim.response_times:
+        if sim.response_times: 
+            analyze_result[policy_name] = analyze_result_simulation(sim.response_times, policy_name)#analyze
             percentile_90 = np.percentile(sim.response_times, 90)
             mean_RT = np.mean(sim.response_times)
         else:
@@ -129,8 +138,9 @@ def run_simulation_with_policies(vehicles: List[Vehicle], precomputed_times: Pre
             'system_load': system_load,
             'total_services': sim.total_services
         })
-        
-    return results
+        #if not analyze :
+        #analyze_result = None
+    return results, analyze_result
 
 def summarize_replication_results(p1_results, p2_results, name_p1_vs_p2):
     policy1_percentiles, policy2_percentiles = [], []
